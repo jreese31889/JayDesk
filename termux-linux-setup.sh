@@ -111,7 +111,14 @@ setup_environment() {
     echo -e "  [*] Device : ${WHITE}${DEVICE_BRAND} ${DEVICE_MODEL}${NC}"
     echo -e "  [*] Android: ${WHITE}${ANDROID_VERSION}${NC}"
 
-    if [[ "$GPU_VENDOR" == *"adreno"* ]] || \
+    # ── Motorola Edge (2024) — Snapdragon 7s Gen 2, Adreno 710 ──
+    if [[ "$DEVICE_MODEL" == *"Edge 2024"* ]] || [[ "$DEVICE_MODEL" == *"Edge (2024)"* ]]; then
+        GPU_DRIVER="freedreno"
+        ZINK_DESC_COUNT=8
+        echo -e "  [*] SoC    : ${WHITE}Snapdragon 7s Gen 2 (SM7435-AB)${NC}"
+        echo -e "  [*] GPU    : ${WHITE}Adreno 710 — Turnip + Zink hardware acceleration${NC}"
+        echo -e "  [*] Panel  : ${WHITE}1080x2400 pOLED @ 144Hz${NC}"
+    elif [[ "$GPU_VENDOR" == *"adreno"* ]] || \
        [[ "$DEVICE_BRAND" =~ [Ss]amsung|[Oo]ne[Pp]lus|[Xx]iaomi|[Rr]edmi|[Pp]oco|[Mm]oto|motorola ]]; then
         GPU_DRIVER="freedreno"
         echo -e "  [*] GPU    : ${WHITE}Adreno — Hardware Acceleration Enabled${NC}"
@@ -122,7 +129,7 @@ setup_environment() {
     fi
     echo ""
 
-    # ── Hardcoded to XFCE4 (DroidDesk default) ──
+    # ── Hardcoded to XFCE4 (JayDesk default) ──
     DE_CHOICE="1"
     DE_NAME="XFCE4"
     echo -e "${GREEN}[+] Desktop: ${DE_NAME} (default)${NC}"
@@ -273,7 +280,7 @@ step_proot() {
     install_pkg "proot" "PRoot"
 
     echo ""
-    # ── Hardcoded to Ubuntu (DroidDesk default) ──
+    # ── Hardcoded to Ubuntu (JayDesk default) ──
     PROOT_DISTRO="ubuntu"
     PROOT_LABEL="Ubuntu 22.04"
     echo -e "${GREEN}[+] Proot distro: ${PROOT_LABEL} (default)${NC}"
@@ -375,6 +382,10 @@ export MESA_GL_VERSION_OVERRIDE=4.6
 export MESA_GLES_VERSION_OVERRIDE=3.2
 export GALLIUM_DRIVER=zink
 export MESA_LOADER_DRIVER_OVERRIDE=zink
+# Motorola Edge (2024) / Adreno 710 tuning — lazy descriptors reduce VRAM pressure
+# on the 8GB shared-memory config; lower descriptor counts avoid Turnip hangs.
+export ZINK_DESCRIPTORS=lazy
+export ZINK_CONTEXT_THREADED=1
 export TU_DEBUG=noconform
 export ZINK_DESCRIPTORS=lazy
 export MESA_VK_WSI_PRESENT_MODE=immediate
@@ -945,8 +956,8 @@ step_vnc_optional() {
 
         read -p "  VNC password [default: 123456]: " VNC_PASS_IN
         VNC_PASS="${VNC_PASS_IN:-123456}"
-        read -p "  Resolution [default: 1280x720]: " VNC_GEO_IN
-        VNC_GEOMETRY="${VNC_GEO_IN:-1280x720}"
+        read -p "  Resolution [default: 1080x2400 — Motorola Edge 2024 native]: " VNC_GEO_IN
+        VNC_GEOMETRY="${VNC_GEO_IN:-1080x2400}"
         VNC_DISPLAY=":1"
 
         echo ""

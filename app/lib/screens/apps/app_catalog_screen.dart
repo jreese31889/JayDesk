@@ -1,8 +1,8 @@
 import 'dart:async';
 
-import 'package:droiddesk/services/platform_bridge.dart';
-import 'package:droiddesk/state/app_state.dart';
-import 'package:droiddesk/theme/droid_theme.dart';
+import 'package:jaydesk/services/platform_bridge.dart';
+import 'package:jaydesk/state/app_state.dart';
+import 'package:jaydesk/theme/jay_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -107,8 +107,8 @@ class _AppCatalogScreenState extends State<AppCatalogScreen>
         _loadInstalled();
       }
     });
-    DroidDeskPlatform.onPackageOperationProgress = _onProgress;
-    DroidDeskPlatform.onPackageOperationLog = _onLog;
+    JayDeskPlatform.onPackageOperationProgress = _onProgress;
+    JayDeskPlatform.onPackageOperationLog = _onLog;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<AppState>().refreshOptionalApps();
       _loadInstalled();
@@ -119,13 +119,13 @@ class _AppCatalogScreenState extends State<AppCatalogScreen>
   @override
   void dispose() {
     if (_activePackage != null) {
-      unawaited(DroidDeskPlatform.cancelNativePackageOperation());
+      unawaited(JayDeskPlatform.cancelNativePackageOperation());
     }
     _searchDebounce?.cancel();
     _searchController.dispose();
     _tabs.dispose();
-    DroidDeskPlatform.onPackageOperationProgress = null;
-    DroidDeskPlatform.onPackageOperationLog = null;
+    JayDeskPlatform.onPackageOperationProgress = null;
+    JayDeskPlatform.onPackageOperationLog = null;
     super.dispose();
   }
 
@@ -150,7 +150,7 @@ class _AppCatalogScreenState extends State<AppCatalogScreen>
   Future<void> _loadInstalled() async {
     if (mounted) setState(() => _loadingInstalled = true);
     try {
-      final packages = await DroidDeskPlatform.getInstalledNativePackages();
+      final packages = await JayDeskPlatform.getInstalledNativePackages();
       if (!mounted) return;
       setState(() {
         _installedPackages = packages.map(_PackageItem.fromMap).toList();
@@ -172,7 +172,7 @@ class _AppCatalogScreenState extends State<AppCatalogScreen>
   Future<void> _search(String query) async {
     if (mounted) setState(() => _searching = true);
     try {
-      final packages = await DroidDeskPlatform.searchNativePackages(query);
+      final packages = await JayDeskPlatform.searchNativePackages(query);
       if (!mounted || query != _searchController.text.trim()) return;
       setState(() {
         _searchResults = packages.map(_PackageItem.fromMap).toList();
@@ -193,7 +193,7 @@ class _AppCatalogScreenState extends State<AppCatalogScreen>
       _cancelRequested = false;
       _cancelling = false;
     });
-    final ok = await DroidDeskPlatform.installNativePackage(packageName);
+    final ok = await JayDeskPlatform.installNativePackage(packageName);
     await _loadInstalled();
     if (!mounted) return;
     final cancelled = _cancelRequested;
@@ -226,7 +226,7 @@ class _AppCatalogScreenState extends State<AppCatalogScreen>
       _cancelling = true;
       _operationStatus = 'Cancelling installation...';
     });
-    await DroidDeskPlatform.cancelNativePackageOperation();
+    await JayDeskPlatform.cancelNativePackageOperation();
   }
 
   Future<void> _remove(_PackageItem package) async {
@@ -256,7 +256,7 @@ class _AppCatalogScreenState extends State<AppCatalogScreen>
       _cancelRequested = false;
       _cancelling = false;
     });
-    final ok = await DroidDeskPlatform.removeNativePackage(package.name);
+    final ok = await JayDeskPlatform.removeNativePackage(package.name);
     await _loadInstalled();
     if (!mounted) return;
     setState(() => _activePackage = null);
@@ -315,7 +315,7 @@ class _AppCatalogScreenState extends State<AppCatalogScreen>
         Text('Popular Linux applications', style: DroidTheme.headingMd),
         const SizedBox(height: 5),
         Text(
-          'Hand-picked apps tested for DroidDesk.',
+          'Hand-picked apps tested for JayDesk.',
           style: DroidTheme.bodyMd,
         ),
         const SizedBox(height: 18),

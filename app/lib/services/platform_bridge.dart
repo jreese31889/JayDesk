@@ -5,8 +5,8 @@ import 'package:flutter/services.dart';
 /// All heavy work (bootstrap extraction, native pkg install, process management)
 /// runs on the Kotlin side. Flutter calls into Kotlin via MethodChannel and
 /// receives callbacks.
-class DroidDeskPlatform {
-  static const _channel = MethodChannel('com.droiddesk/core');
+class JayDeskPlatform {
+  static const _channel = MethodChannel('com.jaydesk.core');
 
   // Callback handlers (set by the UI layer)
   static Function(double progress, String status)? onDownloadProgress;
@@ -271,8 +271,8 @@ class DroidDeskPlatform {
   static Future<bool> startLinux({
     String de = 'xfce4',
     String mode = 'x11',
-    int width = 1920,
-    int height = 1080,
+    int width = 1080,
+    int height = 2400,
   }) async {
     return await _channel.invokeMethod<bool>('startLinux', {
           'de': de,

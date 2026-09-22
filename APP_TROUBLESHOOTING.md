@@ -1,10 +1,10 @@
 # App Troubleshooting Guide
 
-Welcome to the DroidDesk troubleshooting guide. This document explains how to fix common issues when installing and running Linux applications inside the DroidDesk container.
+Welcome to the JayDesk troubleshooting guide. This document explains how to fix common issues when installing and running Linux applications inside the JayDesk container.
 
 ## The "Running as root without --no-sandbox is not supported" Error
 
-Because DroidDesk utilizes a PRoot environment, you are logged in as the `root` user by default. Modern Electron and Chromium-based applications have strict security sandboxes that refuse to run as root.
+Because JayDesk utilizes a PRoot environment, you are logged in as the `root` user by default. Modern Electron and Chromium-based applications have strict security sandboxes that refuse to run as root.
 
 Apps known to have this issue include:
 - Visual Studio Code
@@ -16,7 +16,7 @@ Apps known to have this issue include:
 - Cursor
 
 ### 1. Automatic Fixes (Recommended)
-DroidDesk includes an **Auto-Patcher** that automatically fixes these applications. It hooks into the package manager so you don't have to do anything manually.
+JayDesk includes an **Auto-Patcher** that automatically fixes these applications. It hooks into the package manager so you don't have to do anything manually.
 
 If you install an app using:
 - `apt install <package>`

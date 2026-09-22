@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:droiddesk/services/platform_bridge.dart';
-import 'package:droiddesk/theme/droid_theme.dart';
+import 'package:jaydesk/services/platform_bridge.dart';
+import 'package:jaydesk/theme/jay_theme.dart';
 
-/// Central state management for the entire DroidDesk app.
+/// Central state management for the entire JayDesk app.
 class AppState extends ChangeNotifier {
   // ── Theme State ──
   ThemeMode _themeMode = ThemeMode.dark;
@@ -37,7 +37,7 @@ class AppState extends ChangeNotifier {
 
   // Terminal history
   final List<String> _terminalOutput = [
-    'DroidDesk Linux Terminal\nType commands below.\n',
+    'JayDesk Linux Terminal\nType commands below.\n',
   ];
   List<String> get terminalOutput => _terminalOutput;
 
@@ -93,7 +93,7 @@ class AppState extends ChangeNotifier {
     await _loadThemeMode();
 
     // Set up progress callbacks
-    DroidDeskPlatform.onDownloadProgress = (progress, status) {
+    JayDeskPlatform.onDownloadProgress = (progress, status) {
       _downloadProgress = progress;
       _downloadStatus = status;
       if (progress < 0) {
@@ -105,7 +105,7 @@ class AppState extends ChangeNotifier {
       notifyListeners();
     };
 
-    DroidDeskPlatform.onExtractProgress = (progress, status) {
+    JayDeskPlatform.onExtractProgress = (progress, status) {
       _extractProgress = progress;
       _extractStatus = status;
       if (progress < 0) {
@@ -118,7 +118,7 @@ class AppState extends ChangeNotifier {
       notifyListeners();
     };
 
-    DroidDeskPlatform.onInstallProgress = (progress, status) {
+    JayDeskPlatform.onInstallProgress = (progress, status) {
       _extractProgress = progress; // reusing extract progress state for UI
       _extractStatus = status;
       _statusMessage = status;
@@ -135,7 +135,7 @@ class AppState extends ChangeNotifier {
       notifyListeners();
     };
 
-    DroidDeskPlatform.onTerminalOutput = (text) {
+    JayDeskPlatform.onTerminalOutput = (text) {
       if (_terminalOutput.isEmpty) _terminalOutput.add('');
 
       final cleanedText = text.replaceAll(RegExp(r'.*\r(?!\n)'), '');
@@ -165,7 +165,7 @@ class AppState extends ChangeNotifier {
       notifyListeners();
     };
 
-    DroidDeskPlatform.onOptionalInstallProgress = (progress, status) {
+    JayDeskPlatform.onOptionalInstallProgress = (progress, status) {
       _optionalInstallProgress = progress.clamp(0.0, 1.0);
       _optionalInstallStatus = status;
       notifyListeners();
@@ -190,7 +190,7 @@ class AppState extends ChangeNotifier {
       }
       DroidTheme.currentThemeMode = _themeMode;
       notifyListeners();
-      await DroidDeskPlatform.updateStatusBarTheme(!isDarkMode);
+      await JayDeskPlatform.updateStatusBarTheme(!isDarkMode);
     } catch (_) {
       // Default to dark theme if preferences fail
     }
@@ -203,7 +203,7 @@ class AppState extends ChangeNotifier {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('theme_mode', mode.name);
-      await DroidDeskPlatform.updateStatusBarTheme(!isDarkMode);
+      await JayDeskPlatform.updateStatusBarTheme(!isDarkMode);
     } catch (_) {}
   }
 
@@ -217,7 +217,7 @@ class AppState extends ChangeNotifier {
 
   Future<void> refreshStatus() async {
     try {
-      final status = await DroidDeskPlatform.getRuntimeStatus();
+      final status = await JayDeskPlatform.getRuntimeStatus();
       _isBootstrapped = status['isBootstrapped'] == true;
       _isRunning = status['isRunning'] == true;
       _hasRoot = status['hasRoot'] == true;
@@ -237,7 +237,7 @@ class AppState extends ChangeNotifier {
 
   Future<void> loadDeviceInfo() async {
     try {
-      _deviceInfo = await DroidDeskPlatform.getDeviceInfo();
+      _deviceInfo = await JayDeskPlatform.getDeviceInfo();
       notifyListeners();
     } catch (e) {
       // Non-fatal — continue without device info
@@ -263,7 +263,7 @@ class AppState extends ChangeNotifier {
   }
 
   Future<bool> detectRootForSetup() async {
-    _hasRoot = await DroidDeskPlatform.checkRoot();
+    _hasRoot = await JayDeskPlatform.checkRoot();
     notifyListeners();
     return _hasRoot;
   }
@@ -278,7 +278,7 @@ class AppState extends ChangeNotifier {
       notifyListeners();
 
       // Detect root and choose path
-      final rootAvailable = await DroidDeskPlatform.checkRoot();
+      final rootAvailable = await JayDeskPlatform.checkRoot();
       _hasRoot = rootAvailable && (useRoot ?? true);
       notifyListeners();
 
@@ -305,14 +305,14 @@ class AppState extends ChangeNotifier {
     _extractStatus = 'Extracting native Termux bootstrap...';
     _statusMessage = _extractStatus;
     notifyListeners();
-    await DroidDeskPlatform.setupBootstrap();
+    await JayDeskPlatform.setupBootstrap();
 
     _extractProgress = 0.08;
     _extractStatus = 'Bootstrap environment ready';
     _statusMessage = _extractStatus;
     _isInstallingDE = true;
     notifyListeners();
-    final installed = await DroidDeskPlatform.installDesktopNative(
+    final installed = await JayDeskPlatform.installDesktopNative(
       de: _selectedDE,
     );
     if (!installed) {
@@ -329,7 +329,7 @@ class AppState extends ChangeNotifier {
     _isDownloading = true;
     _downloadProgress = 0.0;
     notifyListeners();
-    if (!await DroidDeskPlatform.downloadRootfs(_selectedDistro)) {
+    if (!await JayDeskPlatform.downloadRootfs(_selectedDistro)) {
       throw StateError(
         'Ubuntu download failed. Check your connection and retry.',
       );
@@ -340,7 +340,7 @@ class AppState extends ChangeNotifier {
     _extractProgress = 0.0;
     _statusMessage = 'Extracting rootfs...';
     notifyListeners();
-    if (!await DroidDeskPlatform.extractRootfs()) {
+    if (!await JayDeskPlatform.extractRootfs()) {
       throw StateError('Ubuntu filesystem extraction failed');
     }
 
@@ -348,7 +348,7 @@ class AppState extends ChangeNotifier {
         'Installing desktop environment (this may take a while)...';
     _isInstallingDE = true;
     notifyListeners();
-    if (!await DroidDeskPlatform.installDesktopEnvironment(_selectedDE)) {
+    if (!await JayDeskPlatform.installDesktopEnvironment(_selectedDE)) {
       throw StateError('Desktop Essentials package installation failed');
     }
     _isExtracting = false;
@@ -374,11 +374,11 @@ class AppState extends ChangeNotifier {
       notifyListeners();
 
       if (_hasRoot) {
-        if (!await DroidDeskPlatform.installDesktopEnvironment(_selectedDE)) {
+        if (!await JayDeskPlatform.installDesktopEnvironment(_selectedDE)) {
           throw StateError('Desktop Essentials package installation failed');
         }
       } else {
-        final installed = await DroidDeskPlatform.installDesktopNative(
+        final installed = await JayDeskPlatform.installDesktopNative(
           de: _selectedDE,
         );
         if (!installed) {
@@ -401,7 +401,7 @@ class AppState extends ChangeNotifier {
 
   Future<void> refreshOptionalApps() async {
     try {
-      _optionalApps = await DroidDeskPlatform.getOptionalApps();
+      _optionalApps = await JayDeskPlatform.getOptionalApps();
       notifyListeners();
     } catch (_) {
       // The desktop remains usable even if package status cannot be queried.
@@ -417,7 +417,7 @@ class AppState extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final installed = await DroidDeskPlatform.installOptionalApp(appId);
+      final installed = await JayDeskPlatform.installOptionalApp(appId);
       await refreshOptionalApps();
       return installed;
     } finally {
@@ -430,12 +430,12 @@ class AppState extends ChangeNotifier {
 
   Future<void> startLinux({
     String mode = 'x11',
-    int width = 1920,
-    int height = 1080,
+    int width = 1080,
+    int height = 2400,
   }) async {
     try {
       _errorMessage = null;
-      final started = await DroidDeskPlatform.startLinux(
+      final started = await JayDeskPlatform.startLinux(
         de: _selectedDE,
         mode: mode,
         width: width,
@@ -454,7 +454,7 @@ class AppState extends ChangeNotifier {
 
   Future<void> launchDesktopActivity() async {
     try {
-      await DroidDeskPlatform.launchDesktopActivity();
+      await JayDeskPlatform.launchDesktopActivity();
     } catch (e) {
       _errorMessage = 'Failed to launch desktop activity: $e';
       notifyListeners();
@@ -463,7 +463,7 @@ class AppState extends ChangeNotifier {
 
   Future<void> stopLinux() async {
     try {
-      await DroidDeskPlatform.stopLinux();
+      await JayDeskPlatform.stopLinux();
       _isRunning = false;
       notifyListeners();
     } catch (e) {
@@ -476,7 +476,7 @@ class AppState extends ChangeNotifier {
     try {
       _terminalOutput.add('\$ $command\n');
       notifyListeners();
-      return await DroidDeskPlatform.executeCommand(command);
+      return await JayDeskPlatform.executeCommand(command);
     } catch (e) {
       return "Error executing command: $e";
     }
@@ -501,13 +501,13 @@ class AppState extends ChangeNotifier {
 
   void clearTerminal() {
     _terminalOutput.clear();
-    _terminalOutput.add('DroidDesk Linux Terminal\nType commands below.\n');
+    _terminalOutput.add('JayDesk Linux Terminal\nType commands below.\n');
     notifyListeners();
   }
 
   Future<void> interruptCommand() async {
     try {
-      await DroidDeskPlatform.interruptCommand();
+      await JayDeskPlatform.interruptCommand();
     } catch (e) {
       debugPrint("Error interrupting command: $e");
     }

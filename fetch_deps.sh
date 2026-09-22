@@ -14,8 +14,8 @@ PACKAGES=(
 )
 
 # Output directories
-JNILIBS_DIR="/Users/orailnoor/workspace/DroidDesk/app/android/app/src/main/jniLibs/arm64-v8a"
-INCLUDE_DIR="/Users/orailnoor/workspace/DroidDesk/app/android/app/src/main/cpp/include"
+JNILIBS_DIR="/Users/orailnoor/workspace/JayDesk/app/android/app/src/main/jniLibs/arm64-v8a"
+INCLUDE_DIR="/Users/orailnoor/workspace/JayDesk/app/android/app/src/main/cpp/include"
 
 mkdir -p "$JNILIBS_DIR"
 mkdir -p "$INCLUDE_DIR"

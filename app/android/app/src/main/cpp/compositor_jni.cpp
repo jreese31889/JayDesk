@@ -8,7 +8,7 @@
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
 
 extern "C" JNIEXPORT void JNICALL
-Java_com_droiddesk_droiddesk_compositor_CompositorService_nativeStartCompositor(
+Java_com_jaydesk_app_compositor_CompositorService_nativeStartCompositor(
         JNIEnv* env,
         jobject /* this */,
         jobject surface) {
@@ -32,7 +32,7 @@ Java_com_droiddesk_droiddesk_compositor_CompositorService_nativeStartCompositor(
 }
 
 extern "C" JNIEXPORT void JNICALL
-Java_com_droiddesk_droiddesk_compositor_CompositorService_nativeStopCompositor(
+Java_com_jaydesk_app_compositor_CompositorService_nativeStopCompositor(
         JNIEnv* env,
         jobject /* this */) {
     LOGI("Stopping Wayland Compositor...");
@@ -40,7 +40,7 @@ Java_com_droiddesk_droiddesk_compositor_CompositorService_nativeStopCompositor(
 }
 
 extern "C" JNIEXPORT void JNICALL
-Java_com_droiddesk_droiddesk_compositor_CompositorService_nativeSendTouchEvent(
+Java_com_jaydesk_app_compositor_CompositorService_nativeSendTouchEvent(
         JNIEnv* env,
         jobject /* this */,
         jint action,

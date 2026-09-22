@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="app/assets/icons/logo.png" width="120" height="120" alt="DroidDesk Logo" style="border-radius: 28px;">
+  <img src="app/assets/icons/logo.png" width="120" height="120" alt="JayDesk Logo" style="border-radius: 28px;">
 </p>
 
-<h1 align="center">DroidDesk Enhanced</h1>
+<h1 align="center">JayDesk Enhanced</h1>
 
 <p align="center">
   <b>Turn any Android phone into a high-performance Linux desktop workstation.</b><br>
@@ -10,8 +10,8 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/techjarves/DroidDesk-Enhanced/releases/latest"><img src="https://img.shields.io/github/v/release/techjarves/DroidDesk-Enhanced?style=for-the-badge&color=6366F1" alt="Latest Release"></a>
-  <a href="https://github.com/techjarves/DroidDesk-Enhanced/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-GPL--3.0-10B981?style=for-the-badge" alt="License"></a>
+  <a href="https://github.com/techjarves/JayDesk/releases/latest"><img src="https://img.shields.io/github/v/release/techjarves/JayDesk?style=for-the-badge&color=6366F1" alt="Latest Release"></a>
+  <a href="https://github.com/techjarves/JayDesk/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-GPL--3.0-10B981?style=for-the-badge" alt="License"></a>
   <img src="https://img.shields.io/badge/Platform-Android%20%7C%20ARM64-38BDF8?style=for-the-badge" alt="Platform">
 </p>
 
@@ -19,7 +19,7 @@
 
 ## Overview
 
-**DroidDesk Enhanced** brings full Linux desktop capability directly to your Android device with advanced customization, dynamic light/dark themeing, and modern edge-to-edge UI support. Connect your phone to any monitor via USB-C or wireless bridge, and it transforms instantly into a desktop computer running real Linux applications—from **VS Code** and **LibreOffice** to **Wireshark**, **Metasploit**, and offline **Local AI** models.
+**JayDesk Enhanced** brings full Linux desktop capability directly to your Android device with advanced customization, dynamic light/dark themeing, and modern edge-to-edge UI support. Connect your phone to any monitor via USB-C or wireless bridge, and it transforms instantly into a desktop computer running real Linux applications—from **VS Code** and **LibreOffice** to **Wireshark**, **Metasploit**, and offline **Local AI** models.
 
 Unplug your phone, and your entire workstation stays with you.
 
@@ -52,7 +52,7 @@ Unplug your phone, and your entire workstation stays with you.
 
 ### Option A: Standalone Android App (Recommended)
 
-1. Download the latest compiled **[Release APK](https://github.com/techjarves/DroidDesk-Enhanced/releases/latest)**.
+1. Download the latest compiled **[Release APK](https://github.com/techjarves/JayDesk/releases/latest)**.
 2. Install the APK on your Android phone (ARM64, Android 8.0+).
 3. Select your theme (Light/Dark) on the onboarding screen.
 4. Pick your desktop environment (XFCE4, LXQt, MATE, or KDE Plasma) and tap **Install Essentials**.
@@ -62,7 +62,7 @@ Unplug your phone, and your entire workstation stays with you.
 If you prefer installing inside an existing Termux terminal environment:
 
 ```bash
-curl -sL https://raw.githubusercontent.com/orailnoor/DroidDesk/main/termux-linux-setup.sh -o setup.sh
+curl -sL https://raw.githubusercontent.com/orailnoor/JayDesk/main/termux-linux-setup.sh -o setup.sh
 bash setup.sh
 ```
 
@@ -82,12 +82,12 @@ bash ~/start-x11.sh
 
 ## Credits & Acknowledgments
 
-DroidDesk is built on the incredible work of the open-source Linux and Android community:
+JayDesk is built on the incredible work of the open-source Linux and Android community:
 
-- **Original Creator & Architect**: **[orailnoor](https://youtube.com/@orailnoor)** ([GitHub: @orailnoor](https://github.com/orailnoor/DroidDesk))
-  *Designed the original DroidDesk Linux setup scripts, Termux integration, embedded X11 architecture, and standalone app core.*
+- **Original Creator & Architect**: **[orailnoor](https://youtube.com/@orailnoor)** ([GitHub: @orailnoor](https://github.com/orailnoor/JayDesk))
+  *Designed the original JayDesk Linux setup scripts, Termux integration, embedded X11 architecture, and standalone app core.*
 
-- **Customizations & Enhancements**: **[techjarves](https://github.com/techjarves/DroidDesk-Enhanced)**
+- **Customizations & Enhancements**: **[techjarves](https://github.com/techjarves/JayDesk)**
   *Implemented the dynamic Light & Dark theme engine, pre-installation onboarding theme selector, status bar edge-to-edge transparent integration, high-contrast terminal bottom sheet, UI contrast overhauls, and distribution releases.*
 
 - **Upstream Open Source Projects**:
@@ -99,7 +99,7 @@ DroidDesk is built on the incredible work of the open-source Linux and Android c
 
 ## License & Legal Notice
 
-DroidDesk is independent open-source software licensed under the **[GNU General Public License v3.0](LICENSE)**. 
+JayDesk is independent open-source software licensed under the **[GNU General Public License v3.0](LICENSE)**. 
 
 > [!NOTE]
-> DroidDesk is an independent project and is not affiliated with or endorsed by Termux, Termux:X11, TUR, Canonical, or Ubuntu. All trademarks belong to their respective owners.
+> JayDesk is an independent project and is not affiliated with or endorsed by Termux, Termux:X11, TUR, Canonical, or Ubuntu. All trademarks belong to their respective owners.

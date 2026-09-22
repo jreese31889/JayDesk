@@ -1,3 +1,3 @@
 # droiddesk
 
-DroidDesk - Full Linux Desktop on Android
+JayDesk - Full Linux Desktop on Android

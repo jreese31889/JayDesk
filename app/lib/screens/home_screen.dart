@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:droiddesk/theme/droid_theme.dart';
-import 'package:droiddesk/state/app_state.dart';
-import 'package:droiddesk/services/platform_bridge.dart';
-import 'package:droiddesk/screens/setup/de_install_screen.dart';
-import 'package:droiddesk/screens/apps/app_catalog_screen.dart';
-import 'package:droiddesk/screens/desktop_tools_screen.dart';
+import 'package:jaydesk/theme/jay_theme.dart';
+import 'package:jaydesk/state/app_state.dart';
+import 'package:jaydesk/services/platform_bridge.dart';
+import 'package:jaydesk/screens/setup/de_install_screen.dart';
+import 'package:jaydesk/screens/apps/app_catalog_screen.dart';
+import 'package:jaydesk/screens/desktop_tools_screen.dart';
 
 /// Home dashboard — shown after setup is complete.
 /// Central hub for launching the desktop, terminal, and managing the environment.
@@ -61,7 +61,7 @@ class HomeScreen extends StatelessWidget {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('DroidDesk', style: DroidTheme.headingSm),
+                          Text('JayDesk', style: DroidTheme.headingSm),
                           Text(
                             state.isRunning ? 'Desktop Running' : 'Ready',
                             style: DroidTheme.bodySm.copyWith(
@@ -540,7 +540,7 @@ class HomeScreen extends StatelessWidget {
                     title: const Text('Battery Optimization'),
                     subtitle: const Text('Disable to prevent session killing'),
                     onTap: () {
-                      DroidDeskPlatform.requestBatteryOptimization();
+                      JayDeskPlatform.requestBatteryOptimization();
                       Navigator.pop(sheetContext);
                     },
                   ),
@@ -556,11 +556,11 @@ class HomeScreen extends StatelessWidget {
                     ),
                     onTap: () {
                       Navigator.pop(sheetContext);
-                      DroidDeskPlatform.requestDefaultLauncher();
+                      JayDeskPlatform.requestDefaultLauncher();
                     },
                   ),
                   FutureBuilder<bool>(
-                    future: DroidDeskPlatform.isDefaultLauncher(),
+                    future: JayDeskPlatform.isDefaultLauncher(),
                     builder: (_, snapshot) {
                       if (snapshot.data != true) return const SizedBox.shrink();
                       return ListTile(
@@ -617,7 +617,7 @@ class HomeScreen extends StatelessWidget {
       builder: (dialogContext) => AlertDialog(
         title: const Text('Change default launcher?'),
         content: const Text(
-          'DroidDesk will stop opening automatically as your Home app. Android will ask you to choose another launcher.',
+          'JayDesk will stop opening automatically as your Home app. Android will ask you to choose another launcher.',
         ),
         actions: [
           TextButton(
@@ -632,7 +632,7 @@ class HomeScreen extends StatelessWidget {
       ),
     );
     if (confirmed == true) {
-      await DroidDeskPlatform.unsetDefaultLauncher();
+      await JayDeskPlatform.unsetDefaultLauncher();
     }
   }
 

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:droiddesk/services/platform_bridge.dart';
-import 'package:droiddesk/theme/droid_theme.dart';
+import 'package:jaydesk/services/platform_bridge.dart';
+import 'package:jaydesk/theme/jay_theme.dart';
 
 class DesktopToolsScreen extends StatefulWidget {
   const DesktopToolsScreen({super.key});
@@ -36,8 +36,8 @@ class _DesktopToolsScreenState extends State<DesktopToolsScreen>
 
   Future<void> _loadDock() async {
     final values = await Future.wait([
-      DroidDeskPlatform.getAndroidApps(),
-      DroidDeskPlatform.getDockPackages(),
+      JayDeskPlatform.getAndroidApps(),
+      JayDeskPlatform.getDockPackages(),
     ]);
     if (!mounted) return;
     setState(() {
@@ -52,7 +52,7 @@ class _DesktopToolsScreenState extends State<DesktopToolsScreen>
       _dockPackages = packages;
       _dockBusy = true;
     });
-    final saved = await DroidDeskPlatform.saveDockPackages(packages);
+    final saved = await JayDeskPlatform.saveDockPackages(packages);
     if (!mounted) return;
     setState(() => _dockBusy = false);
     ScaffoldMessenger.of(context).showSnackBar(
@@ -61,14 +61,14 @@ class _DesktopToolsScreenState extends State<DesktopToolsScreen>
   }
 
   Future<void> _loadSnapshots() async {
-    final snapshots = await DroidDeskPlatform.listDesktopSnapshots();
+    final snapshots = await JayDeskPlatform.listDesktopSnapshots();
     if (mounted) setState(() => _snapshots = snapshots);
   }
 
   Future<void> _createSnapshot() async {
     setState(() => _snapshotBusy = true);
     try {
-      await DroidDeskPlatform.createDesktopSnapshot();
+      await JayDeskPlatform.createDesktopSnapshot();
       await _loadSnapshots();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -109,7 +109,7 @@ class _DesktopToolsScreenState extends State<DesktopToolsScreen>
     if (confirmed != true) return;
     setState(() => _snapshotBusy = true);
     try {
-      final restored = await DroidDeskPlatform.restoreDesktopSnapshot(name);
+      final restored = await JayDeskPlatform.restoreDesktopSnapshot(name);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -147,7 +147,7 @@ class _DesktopToolsScreenState extends State<DesktopToolsScreen>
       ),
     );
     if (confirmed == true) {
-      await DroidDeskPlatform.deleteDesktopSnapshot(name);
+      await JayDeskPlatform.deleteDesktopSnapshot(name);
       await _loadSnapshots();
     }
   }

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:droiddesk/theme/droid_theme.dart';
-import 'package:droiddesk/state/app_state.dart';
-import 'package:droiddesk/screens/setup/setup_progress.dart';
+import 'package:jaydesk/theme/jay_theme.dart';
+import 'package:jaydesk/state/app_state.dart';
+import 'package:jaydesk/screens/setup/setup_progress.dart';
 
 /// Desktop Environment picker — the only choice before Essentials setup.
 class DEPickerScreen extends StatelessWidget {

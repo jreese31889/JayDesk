@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/rendering.dart';
 import '../state/app_state.dart';
-import '../theme/droid_theme.dart';
+import '../theme/jay_theme.dart';
 
 class DesktopScreen extends StatefulWidget {
   final AppState state;
@@ -25,7 +25,7 @@ class _DesktopScreenState extends State<DesktopScreen> {
         children: [
           // Native Wayland Compositor Surface
           PlatformViewLink(
-            viewType: 'droiddesk-surface',
+            viewType: 'jaydesk-surface',
             surfaceFactory: (context, controller) {
               return AndroidViewSurface(
                 controller: controller as AndroidViewController,
@@ -36,7 +36,7 @@ class _DesktopScreenState extends State<DesktopScreen> {
             onCreatePlatformView: (params) {
               return PlatformViewsService.initExpensiveAndroidView(
                 id: params.id,
-                viewType: 'droiddesk-surface',
+                viewType: 'jaydesk-surface',
                 layoutDirection: TextDirection.ltr,
                 creationParams: null,
                 creationParamsCodec: const StandardMessageCodec(),

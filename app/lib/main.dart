@@ -1,32 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'package:droiddesk/theme/droid_theme.dart';
-import 'package:droiddesk/state/app_state.dart';
-import 'package:droiddesk/services/platform_bridge.dart';
-import 'package:droiddesk/screens/welcome_screen.dart';
-import 'package:droiddesk/screens/home_screen.dart';
+import 'package:jaydesk/theme/jay_theme.dart';
+import 'package:jaydesk/state/app_state.dart';
+import 'package:jaydesk/services/platform_bridge.dart';
+import 'package:jaydesk/screens/welcome_screen.dart';
+import 'package:jaydesk/screens/home_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  DroidDeskPlatform.init();
+  JayDeskPlatform.init();
 
   runApp(
     ChangeNotifierProvider(
       create: (_) => AppState(),
-      child: const DroidDeskApp(),
+      child: const JayDeskApp(),
     ),
   );
 }
 
-class DroidDeskApp extends StatefulWidget {
-  const DroidDeskApp({super.key});
+class JayDeskApp extends StatefulWidget {
+  const JayDeskApp({super.key});
 
   @override
-  State<DroidDeskApp> createState() => _DroidDeskAppState();
+  State<JayDeskApp> createState() => _JayDeskAppState();
 }
 
-class _DroidDeskAppState extends State<DroidDeskApp> {
+class _JayDeskAppState extends State<JayDeskApp> {
   @override
   void initState() {
     super.initState();
@@ -56,7 +56,7 @@ class _DroidDeskAppState extends State<DroidDeskApp> {
     SystemChrome.setSystemUIOverlayStyle(overlayStyle);
 
     return MaterialApp(
-      title: 'DroidDesk',
+      title: 'JayDesk',
       debugShowCheckedModeBanner: false,
       theme: DroidTheme.lightThemeData,
       darkTheme: DroidTheme.darkThemeData,

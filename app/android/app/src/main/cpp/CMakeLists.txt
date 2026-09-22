@@ -1,10 +1,10 @@
 cmake_minimum_required(VERSION 3.22.1)
 
-project("droiddesk_compositor")
+project("jaydesk_compositor")
 
 # Add the native JNI bridge source
 add_library(
-    droiddesk_compositor
+    jaydesk_compositor
     SHARED
     compositor_jni.cpp
 )
@@ -15,7 +15,7 @@ find_library(android-lib android)
 
 # Link the libraries
 target_link_libraries(
-    droiddesk_compositor
+    jaydesk_compositor
     ${log-lib}
     ${android-lib}
 )
