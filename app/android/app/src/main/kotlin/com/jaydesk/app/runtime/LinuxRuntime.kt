@@ -398,6 +398,7 @@ class LinuxRuntime(private val context: Context) {
                 Acquire::Retries "3";
                 Acquire::http::Timeout "30";
                 Acquire::https::Timeout "30";
+                Acquire::https::CaInfo "${prefixDir.absolutePath}/etc/tls/cert.pem";
                 DPkg::Lock::Timeout "60";
                 """.trimIndent()
             )
@@ -1040,6 +1041,15 @@ class LinuxRuntime(private val context: Context) {
         env["TERM"] = "xterm-256color"
         env["COLORTERM"] = "truecolor"
         env["LANG"] = "en_US.UTF-8"
+
+        // TLS: GnuTLS/openssl inside the relocated prefix look for the CA bundle
+        // at /etc/ssl/certs (absent on Android) and fail with
+        // "certificate is NOT trusted". Point every TLS consumer at the
+        // bootstrap's own Mozilla CA bundle instead.
+        env["SSL_CERT_FILE"] = "${prefixDir.absolutePath}/etc/tls/cert.pem"
+        env["SSL_CERT_DIR"] = "${prefixDir.absolutePath}/etc/tls"
+        env["CURL_CA_BUNDLE"] = "${prefixDir.absolutePath}/etc/tls/cert.pem"
+        env["GIT_SSL_CAINFO"] = "${prefixDir.absolutePath}/etc/tls/cert.pem"
 
         env["DISPLAY"] = ":0"
         env["XDG_RUNTIME_DIR"] = tmpDir.absolutePath
