@@ -1050,6 +1050,12 @@ class LinuxRuntime(private val context: Context) {
 
         env["PREFIX"] = prefixDir.absolutePath
         env["TMPDIR"] = tmpDir.absolutePath
+        // `pkg install` re-rolls a random weighted mirror on every invocation and
+        // rewrites sources.list/x11.list with the pick. A bad roll (mirror without
+        // an X11 channel, or a down host) breaks the X11 repo mid-setup and aborts
+        // the whole transaction under `set -eu`. The pinned packages-cf.termux.dev
+        // CDN mirror is healthy, so keep it for the entire setup flow.
+        env["TERMUX_PKG_NO_MIRROR_SELECT"] = "1"
         // proot-distro 5.x derives all container paths from these variables.
         // Without them it falls back to Termux's original com.termux sandbox.
         env["TERMUX_APP__PACKAGE_NAME"] = context.packageName
