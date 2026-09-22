@@ -1,0 +1,64 @@
+name: Build Android Release APK
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: release-apk-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Gradle Release Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Flutter (stable)
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Set up Gradle 8.14
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.14'
+
+      - name: Resolve Flutter dependencies
+        working-directory: app
+        run: |
+          flutter pub get
+          echo "flutter.sdk=${FLUTTER_ROOT}" > android/local.properties
+
+      - name: Build release APK (Gradle assembleRelease)
+        working-directory: app
+        run: flutter build apk --release
+
+      - name: Collect APK
+        run: |
+          mkdir -p artifacts
+          APK="$(find app/build -name 'app-release.apk' -path '*flutter-apk*' | head -n1)"
+          if [ -z "$APK" ]; then
+            echo "::error::app-release.apk not found under app/build — build output layout changed?"
+            exit 1
+          fi
+          echo "Built: ${APK}"
+          cp "${APK}" artifacts/JayDesk-release.apk
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: JayDesk-release-apk
+          path: artifacts/JayDesk-release.apk
+          if-no-files-found: error
+          retention-days: 30
