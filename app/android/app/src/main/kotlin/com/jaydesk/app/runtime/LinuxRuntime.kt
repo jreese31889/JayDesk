@@ -24,6 +24,7 @@ class LinuxRuntime(private val context: Context) {
         private const val SHEBANG_MARKER = ".relocated_text_paths_v3"
         private const val ELF_PATCH_MARKER = ".elf_runpaths_patched"
         private const val DE_MARKER = ".de_installed"
+        private const val SYMLINK_FIX_MARKER = ".absolute_symlinks_fixed"
 
         // ELF64 constants
         private const val ELFMAG0: Byte = 0x7f
@@ -258,6 +259,41 @@ class LinuxRuntime(private val context: Context) {
         listOf(prefixDir, binDir, libDir, tmpDir, homeDir).forEach { it.mkdirs() }
         ensureTlsCompatSymlink()
         Log.i(TAG, "Bootstrap directories ready. Base: ${baseDir.absolutePath}")
+    }
+
+    /**
+     * dpkg packages ship absolute symlinks pointing at Termux's original prefix
+     * (e.g. usr/share/X11/xkb -> /data/data/com.termux/files/usr/share/xkeyboard-config-2).
+     * After relocation those targets do not exist, and the isolated :x11 process
+     * runs without the path-rewriting socket hook, so the X server cannot find
+     * its keyboard configuration and fails to start. Rewrite every absolute
+     * symlink that targets the old prefix to point into this prefix instead.
+     */
+    private fun fixAbsoluteSymlinks(prefixDir: File) {
+        val marker = File(prefixDir, SYMLINK_FIX_MARKER)
+        if (marker.exists()) return
+        val termuxPrefix = "/data/data/com.termux/files/usr"
+        var fixed = 0
+        prefixDir.walkTopDown().forEach { file ->
+            if (!file.isFile && !file.isDirectory) return@forEach
+            val target = try {
+                android.system.Os.readlink(file.absolutePath)
+            } catch (e: Exception) {
+                return@forEach  // not a symlink
+            }
+            if (target.startsWith(termuxPrefix)) {
+                val newTarget = prefixDir.absolutePath + target.substring(termuxPrefix.length)
+                try {
+                    file.delete()
+                    android.system.Os.symlink(newTarget, file.absolutePath)
+                    fixed++
+                } catch (e: Exception) {
+                    Log.w(TAG, "Could not rewrite symlink ${file.absolutePath}: ${e.message}")
+                }
+            }
+        }
+        if (fixed > 0) Log.i(TAG, "Rewrote $fixed absolute symlinks into the app prefix")
+        marker.writeText("rewrote $fixed absolute symlinks")
     }
 
     /**
@@ -1790,6 +1826,7 @@ class LinuxRuntime(private val context: Context) {
         patchElfRunpaths(prefixDir)
         compileSocketHook()
         patchEmbeddedXfcePaths()
+        fixAbsoluteSymlinks(prefixDir)
 
         val clipboardTool = File(binDir, "xclip")
         if (!clipboardTool.canExecute()) {

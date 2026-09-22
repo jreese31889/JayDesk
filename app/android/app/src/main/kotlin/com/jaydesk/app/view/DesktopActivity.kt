@@ -556,7 +556,16 @@ class DesktopActivity : Activity() {
 
     private fun showX11Error(message: String, error: Throwable?) {
         Log.e(TAG, message, error)
-        Toast.makeText(this, "X11 Error: $message", Toast.LENGTH_LONG).show()
+        // A transient Toast is easy to miss, and the loading ticker kept cycling
+        // forever while nothing was actually starting. Surface the failure on the
+        // loading overlay itself so the user is never stuck in an endless loop.
+        runOnUiThread {
+            loadingMessageHandler.removeCallbacks(loadingMessageTicker)
+            loadingMessageHandler.removeCallbacks(loadingEstimateTicker)
+            loadingStatus?.text = message
+            loadingEstimate?.text = "Tap back and try again, or check the setup log"
+            Toast.makeText(this, "X11 Error: $message", Toast.LENGTH_LONG).show()
+        }
     }
 
     override fun onDestroy() {
