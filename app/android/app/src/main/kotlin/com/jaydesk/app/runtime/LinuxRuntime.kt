@@ -256,10 +256,39 @@ class LinuxRuntime(private val context: Context) {
     fun setupBootstrap() {
         Log.i(TAG, "Setting up bootstrap environment...")
         listOf(prefixDir, binDir, libDir, tmpDir, homeDir).forEach { it.mkdirs() }
+        ensureTlsCompatSymlink()
         Log.i(TAG, "Bootstrap directories ready. Base: ${baseDir.absolutePath}")
     }
 
+    /**
+     * The bootstrap's libgnutls.so / libcurl.so / libcrypto.so.3 have a CA bundle
+     * path compiled in that is too long to rewrite in-place to our real prefix
+     * (/data/user/0/com.jaydesk.app/files/usr/etc/tls/cert.pem). They are
+     * binary-patched to /data/user/0/com.jaydesk.app/etc/tls/cert.pem instead,
+     * and this symlink makes that path resolve to the real bundle.
+     */
+    private fun ensureTlsCompatSymlink() {
+        try {
+            val linkDir = File(context.dataDir, "etc")
+            val target = File(prefixDir, "etc").absolutePath
+            if (linkDir.exists()) {
+                // If it's already the right symlink, done.
+                try {
+                    if (android.system.Os.readlink(linkDir.absolutePath) == target) return
+                } catch (_: android.system.ErrnoException) {
+                    // Not a symlink (real dir/file) — fall through and replace it.
+                }
+                linkDir.deleteRecursively()
+            }
+            android.system.Os.symlink(target, linkDir.absolutePath)
+            Log.i(TAG, "TLS compat symlink: ${linkDir.absolutePath} -> $target")
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to create TLS compat symlink: ${e.message}")
+        }
+    }
+
     fun extractBootstrapIfNeeded(context: Context) {
+        ensureTlsCompatSymlink()
         val bashBin = File(prefixDir, "bin/bash")
         if (bashBin.exists()) {
             Log.i(TAG, "Bootstrap already extracted at ${prefixDir.absolutePath}")
