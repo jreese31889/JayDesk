@@ -42,15 +42,12 @@ android {
             // every build upgrades cleanly over the previous one. Local builds
             // without the secret fall back to the debug key.
             val ksPath = System.getenv("JAYDESK_KEYSTORE_PATH")
-            val ksPassword = System.getenv("JAYDESK_KEYSTORE_PASSWORD")
-            val keyAlias = System.getenv("JAYDESK_KEY_ALIAS")
-            val keyPassword = System.getenv("JAYDESK_KEY_PASSWORD")
             if (ksPath != null && File(ksPath).exists()) {
                 signingConfig = signingConfigs.create("release") {
                     storeFile = File(ksPath)
-                    storePassword = ksPassword
-                    keyAlias = keyAlias
-                    keyPassword = keyPassword
+                    storePassword = System.getenv("JAYDESK_KEYSTORE_PASSWORD")
+                    keyAlias = System.getenv("JAYDESK_KEY_ALIAS")
+                    keyPassword = System.getenv("JAYDESK_KEY_PASSWORD")
                 }
             } else {
                 signingConfig = signingConfigs.getByName("debug")
