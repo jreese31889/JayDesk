@@ -49,6 +49,21 @@ class MainActivity : FlutterActivity() {
             runAutoChrootSetup()
         }
         handleHomeLaunch(intent)
+
+        // Shared phone storage on the Linux desktop needs the legacy runtime
+        // storage permission (the app targets API 28). Ask once, early, so the
+        // first desktop session can already link the phone folders.
+        if (checkSelfPermission(android.Manifest.permission.READ_EXTERNAL_STORAGE) !=
+            android.content.pm.PackageManager.PERMISSION_GRANTED
+        ) {
+            requestPermissions(
+                arrayOf(
+                    android.Manifest.permission.READ_EXTERNAL_STORAGE,
+                    android.Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                ),
+                4711,
+            )
+        }
     }
 
     override fun onResume() {
@@ -695,7 +710,23 @@ class MainActivity : FlutterActivity() {
                 }
 
                 "requestAllFilesAccess" -> {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                    // The app targets API 28 (legacy storage model), so the real
+                    // access gate on Android 11+ is the runtime WRITE_EXTERNAL_STORAGE
+                    // permission — the R+ "All Files Access" appops toggle alone does
+                    // nothing for legacy apps. Request the runtime permission first;
+                    // fall back to the All Files Access screen only if runtime perms
+                    // are already granted but storage is still unreadable.
+                    val needed = listOf(
+                        android.Manifest.permission.READ_EXTERNAL_STORAGE,
+                        android.Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                    ).filter {
+                        checkSelfPermission(it) != android.content.pm.PackageManager.PERMISSION_GRANTED
+                    }
+                    if (needed.isNotEmpty()) {
+                        requestPermissions(needed.toTypedArray(), 4711)
+                    } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R &&
+                        !android.os.Environment.isExternalStorageManager()
+                    ) {
                         try {
                             startActivity(
                                 Intent(
@@ -713,12 +744,9 @@ class MainActivity : FlutterActivity() {
                 }
 
                 "hasAllFilesAccess" -> {
+                    // The honest test: can the process actually read shared storage?
                     result.success(
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                            android.os.Environment.isExternalStorageManager()
-                        } else {
-                            true
-                        },
+                        android.os.Environment.getExternalStorageDirectory().canRead(),
                     )
                 }
 
