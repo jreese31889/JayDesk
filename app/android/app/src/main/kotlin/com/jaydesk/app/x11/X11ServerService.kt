@@ -116,6 +116,8 @@ class X11ServerService : Service() {
     private fun repairXkbSymlink() {
         val xkbLink = File(filesDir, "usr/share/X11/xkb")
         if (xkbLink.exists()) return  // correct link or real directory already
+        val xkbData = File(filesDir, "usr/share/xkeyboard-config-2")
+        if (!xkbData.isDirectory) return  // nothing to point at
         try {
             val target = Os.readlink(xkbLink.absolutePath)
             val termuxPrefix = "/data/data/com.termux/files/usr"
@@ -131,7 +133,16 @@ class X11ServerService : Service() {
                 }
             }
         } catch (e: Exception) {
-            // Not a symlink (readlink throws ENOENT/EINVAL) — nothing to repair.
+            // readlink throws when the link is absent entirely — create it so
+            // conventional consumers (and libXlorie's chroot-case fallback,
+            // which resolves dirname(TMPDIR)/usr/share/X11/xkb) find the data.
+            try {
+                xkbLink.parentFile?.mkdirs()
+                Os.symlink(xkbData.absolutePath, xkbLink.absolutePath)
+                Log.i(TAG, "Created XKB symlink -> ${xkbData.absolutePath}")
+            } catch (e2: Exception) {
+                Log.w(TAG, "Could not create XKB symlink: ${e2.message}")
+            }
         }
     }
 
@@ -168,13 +179,26 @@ class X11ServerService : Service() {
 
         repairXkbSymlink()
 
+        // The xkb data itself lives at usr/share/xkeyboard-config-2 (installed
+        // by the xkeyboard-config package). usr/share/X11/xkb is only a symlink
+        // to it that dpkg may extract as a dangling absolute link or not at
+        // all, and libXlorie's own fallbacks check paths that never exist in
+        // this app (/usr/share/..., /data/data/com.termux/...). Prefer the real
+        // data directory directly so the X server always finds its keymaps.
+        val xkbDataDir = File(filesDir, "usr/share/xkeyboard-config-2")
         val installedXkbRoot = File(filesDir, "usr/share/X11/xkb")
         val rootfsXkbRoot = File(filesDir, "rootfs/usr/share/X11/xkb")
-        val xkbRoot = if (installedXkbRoot.exists()) installedXkbRoot else rootfsXkbRoot
-        if (xkbRoot.exists()) {
+        val xkbRoot = when {
+            xkbDataDir.isDirectory -> xkbDataDir
+            installedXkbRoot.exists() -> installedXkbRoot
+            rootfsXkbRoot.exists() -> rootfsXkbRoot
+            else -> null
+        }
+        if (xkbRoot != null) {
             Os.setenv("XKB_CONFIG_ROOT", xkbRoot.absolutePath, true)
+            Log.i(TAG, "XKB_CONFIG_ROOT=${xkbRoot.absolutePath}")
         } else {
-            Log.w(TAG, "XKB config root not found")
+            Log.w(TAG, "XKB config root not found — X server will fail to start")
         }
 
         val staleSocket = File(appTmpDir, ".X11-unix/X0")
