@@ -40,8 +40,19 @@ jobs:
           flutter pub get
           echo "flutter.sdk=${FLUTTER_ROOT}" > android/local.properties
 
+      - name: Restore release keystore
+        env:
+          JAYDESK_KEYSTORE: ${{ secrets.JAYDESK_KEYSTORE }}
+        run: |
+          echo "${JAYDESK_KEYSTORE}" | base64 -d > "$HOME/jaydesk-release.keystore"
+          echo "JAYDESK_KEYSTORE_PATH=$HOME/jaydesk-release.keystore" >> "$GITHUB_ENV"
+
       - name: Build release APK (Gradle assembleRelease)
         working-directory: app
+        env:
+          JAYDESK_KEYSTORE_PASSWORD: ${{ secrets.JAYDESK_KEYSTORE_PASSWORD }}
+          JAYDESK_KEY_ALIAS: ${{ secrets.JAYDESK_KEY_ALIAS }}
+          JAYDESK_KEY_PASSWORD: ${{ secrets.JAYDESK_KEY_PASSWORD }}
         run: flutter build apk --release
 
       - name: Collect APK

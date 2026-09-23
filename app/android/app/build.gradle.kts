@@ -38,9 +38,23 @@ android {
 
     buildTypes {
         release {
-            // GitHub-distributed testing builds intentionally use Android's
-            // debug key so release APKs are directly installable.
-            signingConfig = signingConfigs.getByName("debug")
+            // CI signs with the dedicated release keystore (GitHub secrets) so
+            // every build upgrades cleanly over the previous one. Local builds
+            // without the secret fall back to the debug key.
+            val ksPath = System.getenv("JAYDESK_KEYSTORE_PATH")
+            val ksPassword = System.getenv("JAYDESK_KEYSTORE_PASSWORD")
+            val keyAlias = System.getenv("JAYDESK_KEY_ALIAS")
+            val keyPassword = System.getenv("JAYDESK_KEY_PASSWORD")
+            if (ksPath != null && File(ksPath).exists()) {
+                signingConfig = signingConfigs.create("release") {
+                    storeFile = File(ksPath)
+                    storePassword = ksPassword
+                    keyAlias = keyAlias
+                    keyPassword = keyPassword
+                }
+            } else {
+                signingConfig = signingConfigs.getByName("debug")
+            }
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
