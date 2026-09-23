@@ -1128,7 +1128,10 @@ class LinuxRuntime(private val context: Context) {
         env["PERL5LIB"] = "${prefixDir.absolutePath}/lib/perl5/core_perl:${prefixDir.absolutePath}/lib/perl5/site_perl:${prefixDir.absolutePath}/lib/perl5/vendor_perl:${prefixDir.absolutePath}/lib/perl5"
         env["PYTHONHOME"] = prefixDir.absolutePath
         env["PIP_CONFIG_FILE"] = "${prefixDir.absolutePath}/etc/pip.conf"
-        env["XDG_DATA_DIRS"] = "${prefixDir.absolutePath}/share"
+        env["XDG_DATA_DIRS"] = listOf(
+            "${homeDir.absolutePath}/.local/share",
+            "${prefixDir.absolutePath}/share",
+        ).joinToString(":")
         // Xfce validates that its compile-time SYSCONFDIR is present literally,
         // even though actual file access is relocated to this app's prefix.
         env["XDG_CONFIG_DIRS"] = listOf(
@@ -1808,6 +1811,54 @@ class LinuxRuntime(private val context: Context) {
 
     // ── Session Management ──
 
+    /**
+     * Exposes shared phone storage inside the Linux home. Android's shared
+     * storage (/storage/emulated/0) holds the user's real Downloads, DCIM,
+     * Pictures and Documents; every other app writes there. Symlink the
+     * well-known folders into the Linux home so the desktop file manager and
+     * Linux apps reach the same files. Requires All Files Access, which the
+     * manifest already requests; without it the symlinks simply will not
+     * resolve and the desktop keeps its private home.
+     */
+    private fun linkSharedStorage(homeDir: File) {
+        val sharedRoot = android.os.Environment.getExternalStorageDirectory()
+        if (!sharedRoot.isDirectory) {
+            Log.w(TAG, "Shared storage unavailable; skipping home links")
+            return
+        }
+        // Linux home folders that should map to the phone's real folders.
+        // A plain "Phone" link exposes everything else (Android/data, Ringtones, …).
+        val links = mapOf(
+            "Downloads" to "Download",
+            "Documents" to "Documents",
+            "Pictures" to "Pictures",
+            "Music" to "Music",
+            "Videos" to "Movies",
+            "Phone" to "",
+        )
+        links.forEach { (linkName, sharedName) ->
+            val target = if (sharedName.isEmpty()) sharedRoot else File(sharedRoot, sharedName)
+            if (!target.isDirectory) return@forEach
+            val link = File(homeDir, linkName)
+            try {
+                if (android.system.Os.readlink(link.absolutePath) == target.absolutePath) {
+                    return@forEach  // already correct
+                }
+                if (link.exists()) {
+                    if (link.isDirectory && link.listFiles()?.isEmpty() == true) {
+                        link.deleteRecursively()
+                    } else {
+                        return@forEach  // real user data — never clobber
+                    }
+                }
+                android.system.Os.symlink(target.absolutePath, link.absolutePath)
+                Log.i(TAG, "Linked ~/$linkName -> ${target.absolutePath}")
+            } catch (e: Exception) {
+                Log.w(TAG, "Could not link ~/$linkName: ${e.message}")
+            }
+        }
+    }
+
     fun startSession(desktopEnv: String = "xfce4", mode: String = "x11", width: Int = 1920, height: Int = 1080) {
         val selectedDesktop = normalizedDesktop(desktopEnv)
         extractBootstrapIfNeeded(context)
@@ -1852,7 +1903,23 @@ class LinuxRuntime(private val context: Context) {
                 homeDir = homeDir,
                 python = File(prefixDir, "bin/python3"),
             )
+        } else {
+            // Non-XFCE desktops still get the Android integration: app
+            // launchers, and symlinks from the Linux home into shared phone
+            // storage so files are reachable from the desktop.
+            AndroidAppBridge.syncLaunchers(
+                context = context,
+                homeDir = homeDir,
+                python = File(prefixDir, "bin/python3"),
+                fileManager = when (selectedDesktop) {
+                    "lxqt" -> "pcmanfm-qt"
+                    "mate" -> "caja"
+                    "kde" -> "dolphin"
+                    else -> "thunar"
+                },
+            )
         }
+        linkSharedStorage(homeDir)
 
         // X11ServerService owns this socket. Never delete it from the client runtime.
         File(tmpDir, ".X11-unix").mkdirs()

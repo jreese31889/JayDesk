@@ -547,6 +547,21 @@ class HomeScreen extends StatelessWidget {
                   ListTile(
                     contentPadding: EdgeInsets.zero,
                     leading: const Icon(
+                      Icons.folder_shared_rounded,
+                      color: DroidTheme.secondary,
+                    ),
+                    title: const Text('Phone Storage Access'),
+                    subtitle: const Text(
+                      'Show Downloads, Photos, Music and all phone files on the Linux desktop',
+                    ),
+                    onTap: () {
+                      JayDeskPlatform.requestAllFilesAccess();
+                      Navigator.pop(sheetContext);
+                    },
+                  ),
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(
                       Icons.home_rounded,
                       color: DroidTheme.primaryLight,
                     ),

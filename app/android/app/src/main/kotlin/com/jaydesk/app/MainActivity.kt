@@ -694,6 +694,34 @@ class MainActivity : FlutterActivity() {
                     result.success(true)
                 }
 
+                "requestAllFilesAccess" -> {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                        try {
+                            startActivity(
+                                Intent(
+                                    android.provider.Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION,
+                                    android.net.Uri.parse("package:$packageName"),
+                                ),
+                            )
+                        } catch (e: Exception) {
+                            startActivity(
+                                Intent(android.provider.Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION),
+                            )
+                        }
+                    }
+                    result.success(true)
+                }
+
+                "hasAllFilesAccess" -> {
+                    result.success(
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                            android.os.Environment.isExternalStorageManager()
+                        } else {
+                            true
+                        },
+                    )
+                }
+
                 "unsetDefaultLauncher" -> {
                     thread(name = "unset-home-role") {
                         val removed = unsetDefaultLauncher()

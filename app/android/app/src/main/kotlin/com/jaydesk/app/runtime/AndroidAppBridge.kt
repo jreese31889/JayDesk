@@ -76,7 +76,13 @@ object AndroidAppBridge {
         }
     }
 
-    fun syncLaunchers(context: Context, homeDir: File, python: File, sessionRoot: File? = null) {
+    fun syncLaunchers(
+        context: Context,
+        homeDir: File,
+        python: File,
+        sessionRoot: File? = null,
+        fileManager: String = "thunar",
+    ) {
         if (!python.canExecute()) {
             Log.w(TAG, "Python is unavailable; Android app launchers were not synced")
             return
@@ -138,8 +144,9 @@ object AndroidAppBridge {
                 """.trimIndent() + "\n",
             )
         }
-        syncUtilityLaunchers(homeDir, pythonPath, launcherPath, sessionPath(homeDir))
+        syncUtilityLaunchers(homeDir, pythonPath, launcherPath, sessionPath(homeDir), fileManager)
         syncDockLaunchers(context, homeDir, activities, appsDir)
+        syncLxqtDock(context, homeDir, fileManager)
         Log.i(TAG, "Synced ${activities.size} Android app launchers into ${appsDir.absolutePath}")
     }
 
@@ -148,6 +155,7 @@ object AndroidAppBridge {
         pythonPath: String,
         launcherPath: String,
         homePath: String,
+        fileManager: String = "thunar",
     ) {
         val appsDir = File(homeDir, ".local/share/applications/jaydesk-tools").apply {
             mkdirs()
@@ -167,7 +175,7 @@ object AndroidAppBridge {
                 Type=Application
                 Name=$label
                 Comment=Open $label in Linux Files
-                Exec=thunar ${desktopEscape(path)}
+                Exec=$fileManager ${desktopEscape(path)}
                 Icon=folder
                 Terminal=false
                 Categories=Utility;FileManager;
@@ -337,6 +345,68 @@ object AndroidAppBridge {
         runCatching {
             context.startActivity(Intent(settingsAction).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
         }.onFailure { Log.w(TAG, "Could not open Android setting $action", it) }
+    }
+
+    /**
+     * LXQt's panel quick-launch (dock) is configured through
+     * ~/.config/lxqt/panel.conf. XFCE-only dock sync does nothing for LXQt, so
+     * write a managed quicklaunch section with the phone folder + Android app
+     * launchers. Managed lines are delimited by markers so repeated syncs
+     * replace cleanly.
+     */
+    private fun syncLxqtDock(context: Context, homeDir: File, fileManager: String) {
+        val panelConf = File(homeDir, ".config/lxqt/panel.conf")
+        if (!panelConf.isFile) {
+            // LXQt has not written its default config yet (first launch pending).
+            // The dock sync will run again on the next session start.
+            Log.i(TAG, "LXQt panel.conf not present yet; dock sync deferred")
+            return
+        }
+        val appsDir = File(homeDir, ".local/share/applications")
+        val dockPackages = getDockPackages(context)
+        val desktopDirs = listOf("jaydesk-tools", "jaydesk-android")
+        val entries = buildList {
+            // Phone folders first
+            add("jaydesk-folder-downloads.desktop")
+            add("jaydesk-folder-pictures.desktop")
+            add("jaydesk-folder-documents.desktop")
+            dockPackages.forEach { pkg ->
+                val safe = pkg.replace(Regex("[^A-Za-z0-9_.-]"), "_")
+                add("$safe.desktop")
+            }
+        }
+        val managedStart = "# JayDesk dock start"
+        val managedEnd = "# JayDesk dock end"
+        val launcherLines = entries.mapNotNull { name ->
+            val dir = desktopDirs.firstNotNullOfOrNull { File(appsDir, "$it/$name").takeIf(File::isFile) }
+                ?: return@mapNotNull null
+            name
+        }.mapIndexed { index, name -> "apps\\${index + 1}=$name" }
+        // Build the new [quicklaunch] section preserving any non-managed keys.
+        val existing = panelConf.readText()
+        val quicklaunchRegex = Regex("(?ms)^\\[quicklaunch\\]\\s*\\n(.*?)(?=^\\[|\\z)")
+        val managedBlockRegex = Regex("(?m)^.*$managedStart.*$managedEnd.*$\\n?")
+        val keptKeys = quicklaunchRegex.find(existing)?.groupValues?.get(1)
+            ?.replace(managedBlockRegex, "")
+            ?.lines()
+            ?.filter { it.isNotBlank() && !it.startsWith("apps") }
+            ?.map { it.trim() }
+            ?.filter { it.isNotEmpty() }
+            ?: emptyList()
+        val newSection = buildString {
+            append("[quicklaunch]\n")
+            keptKeys.forEach { append("$it\n") }
+            append("$managedStart\n")
+            launcherLines.forEach { append("$it\n") }
+            append(managedEnd)
+        }
+        val updated = if (quicklaunchRegex.containsMatchIn(existing)) {
+            existing.replace(quicklaunchRegex, newSection)
+        } else {
+            "$existing\n$newSection\n"
+        }
+        panelConf.writeText(updated)
+        Log.i(TAG, "Synced LXQt quicklaunch dock (${launcherLines.size} entries)")
     }
 
     private fun launcherActivities(context: Context): List<android.content.pm.ResolveInfo> {

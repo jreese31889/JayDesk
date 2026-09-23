@@ -317,6 +317,17 @@ class JayDeskPlatform {
     await _channel.invokeMethod('requestDefaultLauncher');
   }
 
+  // ── All Files Access (shared phone storage in the Linux desktop) ──
+
+  static Future<void> requestAllFilesAccess() async {
+    await _channel.invokeMethod('requestAllFilesAccess');
+  }
+
+  static Future<bool> hasAllFilesAccess() async {
+    final result = await _channel.invokeMethod('hasAllFilesAccess');
+    return result as bool? ?? false;
+  }
+
   static Future<bool> unsetDefaultLauncher() async {
     return await _channel.invokeMethod<bool>('unsetDefaultLauncher') ?? false;
   }
