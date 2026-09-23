@@ -563,7 +563,7 @@ class DesktopActivity : Activity() {
             loadingMessageHandler.removeCallbacks(loadingMessageTicker)
             loadingMessageHandler.removeCallbacks(loadingEstimateTicker)
             loadingStatus?.text = message
-            loadingEstimate?.text = "Tap back and try again, or check the setup log"
+            loadingEstimate?.text = "Run 'cat x11-server-failure.log' in the terminal, or tap back and retry"
             Toast.makeText(this, "X11 Error: $message", Toast.LENGTH_LONG).show()
         }
     }
