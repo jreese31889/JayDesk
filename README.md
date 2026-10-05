@@ -32,6 +32,7 @@ Unplug your phone, and your entire workstation stays with you.
 - **Pre-Installation Onboarding Theme Switcher**: Toggle your preferred aesthetic right from the initial setup screens before installation.
 - **Edge-to-Edge System Bar Integration**: Clean, transparent Android status bar overlays with adaptive icon brightness on Android 11 through Android 15.
 - **One-Tap Desktop Essentials**: Automated installation of **XFCE4**, **LXQt**, **MATE**, or **KDE Plasma** desktop environments.
+- **AI Coding Agents Built In**: **Hermes Agent**, **OpenClaude**, and **Antigravity CLI** are installed inside the Proot Linux container with desktop-menu launchers, pre-configured for Google Gemini.
 - **Dual Architecture**: Supports **Rooted Chroot** (Ubuntu 24.04 LTS) and **Non-Rooted Native Termux/TUR** userspaces.
 - **Embedded X11 Server**: Renders through an embedded Termux:X11 display server directly on `DISPLAY=:0` without VNC lag.
 
@@ -42,11 +43,35 @@ Unplug your phone, and your entire workstation stays with you.
 | Category | Supported Tools |
 |---|---|
 | **Development** | Full VS Code (Python, Node.js, C++, Extensions), Git, Claude Code, Vim, Neovim |
+| **AI Coding Agents** | Hermes Agent (Nous Research), OpenClaude, Antigravity CLI (`agy`) — Gemini-powered, menu launchers included |
 | **Productivity** | LibreOffice Suite (Writer, Calc, Impress), Firefox, Chromium |
 | **Security & Auditing** | Wireshark, Metasploit Framework, Nmap |
 | **Media & AI** | Blender (3D modeling), Local Offline LLMs (Ollama / Llama.cpp), GIMP |
 
 ---
+
+## AI Agents (inside the Linux desktop)
+
+The setup script installs three AI coding agents **inside the Proot Ubuntu container** and adds them to your desktop menu (Development category), so they launch right from the Linux desktop:
+
+| Agent | Command | Default model |
+|---|---|---|
+| **Hermes Agent** (Nous Research) | `hermes` | Gemini 3.5 Flash Lite (`~/.hermes/config.yaml`) |
+| **OpenClaude** | `openclaude` | Gemini 3.5 Flash Lite (`--model gemini-3.5-flash-lite`) |
+| **Antigravity CLI** (Google) | `agy` | Gemini API mode — pick the model inside the app |
+
+**API key:** During setup you're asked for a Google Gemini API key (input is hidden). It's stored only in the Proot user's `~/.hermes/.env` (permissions `600`) and loaded into your shell from there. Skipped it? Add it later:
+
+```bash
+bash ~/start-proot.sh        # enter the container
+su - <your-desktop-username> # switch to the user who owns the agents
+nano ~/.hermes/.env          # GOOGLE_API_KEY=... and GEMINI_API_KEY=...
+```
+
+**Notes:**
+- OpenClaude needs Node.js ≥ 22, so the setup installs Node 22 (NodeSource) inside Proot first — Ubuntu 22.04's stock Node is too old.
+- Installers: Hermes via `hermes-agent.nousresearch.com/install.sh`, OpenClaude via `npm install -g @gitlawb/openclaude`, Antigravity via `antigravity.google/cli/install.sh` (ARM64 build, runs under glibc in Proot).
+- Antigravity's model list is controlled by Google in the `agy` app; the setup points it at your Gemini API key (`modelProvider: gemini` in `~/.gemini/antigravity-cli/settings.json`).
 
 ## Quick Start
 

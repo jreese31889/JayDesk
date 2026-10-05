@@ -13,7 +13,7 @@
 #######################################################
 
 # ============== CONFIGURATION ==============
-TOTAL_STEPS=12
+TOTAL_STEPS=13
 CURRENT_STEP=0
 DE_CHOICE="1"
 DE_NAME="XFCE4"
@@ -552,6 +552,169 @@ SYNCEOF
     bash ~/proot-menu-sync.sh "$PROOT_DISTRO" 2>/dev/null || true
 }
 
+# ============== STEP: AI AGENTS (inside the Proot desktop) ==============
+step_ai_agents() {
+    update_progress
+    echo -e "${PURPLE}[Step ${CURRENT_STEP}/${TOTAL_STEPS}] Installing AI Coding Agents (Hermes / OpenClaude / Antigravity)...${NC}"
+    echo ""
+
+    echo -e "  ${WHITE}Agents are installed INSIDE the ${PROOT_LABEL} container and${NC}"
+    echo -e "  ${WHITE}show up in your desktop menu via the Proot App Bridge.${NC}"
+    echo ""
+    echo -e "  ${CYAN}Default model: Gemini 3.5 Flash Lite (Hermes + OpenClaude).${NC}"
+    echo -e "  ${CYAN}Antigravity (agy) uses the same Gemini API key; pick its model in-app.${NC}"
+    echo ""
+
+    # ---- Gemini API key (optional; hidden input; stored only in Proot ~/.hermes/.env) ----
+    GEMINI_API_KEY_VALUE=""
+    read -s -p "  Paste your Google Gemini API key (Enter to skip, add later): " GEMINI_API_KEY_VALUE
+    echo ""
+    if [ -z "$GEMINI_API_KEY_VALUE" ]; then
+        echo -e "  ${YELLOW}[!] Skipped. Add your key later inside Proot: ~/.hermes/.env${NC}"
+    fi
+
+    # ---- Phase 1 (root): Node.js 22 + base deps inside Proot ----
+    # (Ubuntu 22.04's stock Node is too old for these CLIs; OpenClaude needs Node >= 22)
+    echo -e "  [*] Installing Node.js 22 + deps in ${PROOT_LABEL}..."
+    proot-distro login "$PROOT_DISTRO" -- bash -c "
+        export DEBIAN_FRONTEND=noninteractive
+        apt-get update -y -q > /dev/null 2>&1
+        apt-get install -y -q curl ca-certificates git > /dev/null 2>&1
+        curl -fsSL https://deb.nodesource.com/setup_22.x | bash - > /dev/null 2>&1
+        apt-get install -y -q nodejs > /dev/null 2>&1
+    " 2>/dev/null || true
+    echo -e "  [+] Node.js ready in ${PROOT_LABEL}"
+
+    # ---- Phase 2 (desktop user): install the three agent CLIs ----
+    echo -e "  [*] Installing Hermes Agent (Nous Research)..."
+    if proot-distro login "$PROOT_DISTRO" --user "$SETUP_USERNAME" -- bash -c "
+        curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash
+    "; then
+        echo -e "  [+] Hermes Agent installed (command: hermes)"
+    else
+        echo -e "  ${YELLOW}[!] Hermes needs a rerun inside Proot: curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash${NC}"
+    fi
+
+    echo -e "  [*] Installing OpenClaude..."
+    if proot-distro login "$PROOT_DISTRO" --user "$SETUP_USERNAME" -- bash -c "
+        mkdir -p ~/.local
+        npm config set prefix ~/.local > /dev/null 2>&1
+        npm install -g @gitlawb/openclaude@latest
+    "; then
+        echo -e "  [+] OpenClaude installed (command: openclaude)"
+    else
+        echo -e "  ${YELLOW}[!] OpenClaude needs a rerun inside Proot: npm install -g @gitlawb/openclaude@latest${NC}"
+    fi
+
+    echo -e "  [*] Installing Antigravity CLI (agy)..."
+    if proot-distro login "$PROOT_DISTRO" --user "$SETUP_USERNAME" -- bash -c "
+        curl -fsSL https://antigravity.google/cli/install.sh -o /tmp/antigravity-install.sh && bash /tmp/antigravity-install.sh
+    "; then
+        echo -e "  [+] Antigravity CLI installed (command: agy)"
+    else
+        echo -e "  ${YELLOW}[!] Antigravity needs a rerun inside Proot: curl -fsSL https://antigravity.google/cli/install.sh | bash${NC}"
+    fi
+
+    # ---- Phase 3 (desktop user): Gemini wiring, default model gemini-3.5-flash-lite ----
+    echo -e "  [*] Configuring Gemini 3.5 Flash Lite..."
+    proot-distro login "$PROOT_DISTRO" --user "$SETUP_USERNAME" -- bash -c "
+        mkdir -p ~/.hermes ~/.gemini/antigravity-cli
+
+        # The API key lives ONLY in ~/.hermes/.env (chmod 600), nowhere else.
+        umask 077
+        cat > ~/.hermes/.env << ENVEOF
+GOOGLE_API_KEY=$GEMINI_API_KEY_VALUE
+GEMINI_API_KEY=$GEMINI_API_KEY_VALUE
+ENVEOF
+        chmod 600 ~/.hermes/.env
+
+        # Hermes: default model + provider
+        if [ ! -f ~/.hermes/config.yaml ]; then
+            cat > ~/.hermes/config.yaml << YAMLEOF
+model:
+  default: \"gemini-3.5-flash-lite\"
+  provider: \"gemini\"
+YAMLEOF
+        else
+            sed -i 's/^  default:.*/  default: \"gemini-3.5-flash-lite\"/' ~/.hermes/config.yaml 2>/dev/null || true
+        fi
+
+        # Antigravity CLI: use the Gemini API (GEMINI_API_KEY from ~/.hermes/.env)
+        cat > ~/.gemini/antigravity-cli/settings.json << JSONEOF
+{
+  \"modelProvider\": \"gemini\"
+}
+JSONEOF
+
+        # Shell env for interactive Proot sessions: load key file + OpenClaude Gemini mode
+        grep -q 'JAYDESK_AI_AGENTS' ~/.bashrc 2>/dev/null || cat >> ~/.bashrc << 'RCEOF'
+
+# JAYDESK_AI_AGENTS
+[ -f ~/.hermes/.env ] && set -a && . ~/.hermes/.env && set +a
+export CLAUDE_CODE_USE_GEMINI=1
+export PATH=\"\$HOME/.local/bin:\$PATH\"
+RCEOF
+    " 2>/dev/null || true
+    echo -e "  [+] Gemini configured (Hermes/OpenClaude default: gemini-3.5-flash-lite)"
+
+    # ---- Phase 4 (root): launcher scripts + desktop menu entries inside Proot ----
+    # Menu Bridge syncs /usr/share/applications/*.desktop into the native desktop menu.
+    # Wrappers run as root, so launchers drop to the desktop user who owns the installs.
+    proot-distro login "$PROOT_DISTRO" -- bash -c "
+        cat > /usr/local/bin/jaydesk-hermes << LAUNCHEOF
+#!/bin/bash
+exec su - $SETUP_USERNAME -c 'exec hermes'
+LAUNCHEOF
+        cat > /usr/local/bin/jaydesk-openclaude << LAUNCHEOF
+#!/bin/bash
+exec su - $SETUP_USERNAME -c 'exec openclaude --model gemini-3.5-flash-lite'
+LAUNCHEOF
+        cat > /usr/local/bin/jaydesk-antigravity << LAUNCHEOF
+#!/bin/bash
+exec su - $SETUP_USERNAME -c 'exec agy'
+LAUNCHEOF
+        chmod +x /usr/local/bin/jaydesk-hermes /usr/local/bin/jaydesk-openclaude /usr/local/bin/jaydesk-antigravity
+
+        mkdir -p /usr/share/applications
+        cat > /usr/share/applications/jaydesk-hermes.desktop << DESKEOF
+[Desktop Entry]
+Name=Hermes Agent
+Comment=Nous Research Hermes AI coding agent (Gemini 3.5 Flash Lite)
+Exec=jaydesk-hermes
+Icon=utilities-terminal
+Type=Application
+Terminal=true
+Categories=Development;Utility;
+DESKEOF
+        cat > /usr/share/applications/jaydesk-openclaude.desktop << DESKEOF
+[Desktop Entry]
+Name=OpenClaude
+Comment=OpenClaude coding agent (Gemini 3.5 Flash Lite)
+Exec=jaydesk-openclaude
+Icon=utilities-terminal
+Type=Application
+Terminal=true
+Categories=Development;Utility;
+DESKEOF
+        cat > /usr/share/applications/jaydesk-antigravity.desktop << DESKEOF
+[Desktop Entry]
+Name=Antigravity CLI
+Comment=Google Antigravity agent CLI (agy) — Gemini API
+Exec=jaydesk-antigravity
+Icon=utilities-terminal
+Type=Application
+Terminal=true
+Categories=Development;Utility;
+DESKEOF
+    " 2>/dev/null || true
+    echo -e "  [+] Desktop menu entries created: Hermes Agent, OpenClaude, Antigravity CLI"
+
+    # Sync the new Proot apps into the native desktop menu right away
+    [ -f ~/proot-menu-sync.sh ] && bash ~/proot-menu-sync.sh "$PROOT_DISTRO" > /dev/null 2>&1 || true
+    echo -e "  ${GREEN}[+] AI agents ready — look in your desktop menu (Development).${NC}"
+    echo ""
+}
+
 # ============== STEP 10: LAUNCHERS ==============
 step_launchers() {
     update_progress
@@ -1046,6 +1209,7 @@ COMPLETE
     echo "    - Firefox, Git, Python 3"
     echo "    - GPU Acceleration (Turnip/Zink)"
     echo "    - Proot Linux Container + App Bridge"
+    echo "    - AI Agents in Proot: Hermes, OpenClaude, Antigravity (Gemini 3.5 Flash Lite)"
     echo "    - Modern Dark XFCE Theme (Adwaita + Dracula terminal)"
     echo ""
     echo -e "${YELLOW}============================================================${NC}"
@@ -1063,6 +1227,9 @@ COMPLETE
     fi
     echo -e "  ${GREEN}Proot Linux shell:${NC}"
     echo -e "    ${WHITE}bash ~/start-proot.sh${NC}"
+    echo ""
+    echo -e "  ${GREEN}AI coding agents (inside Proot, also in desktop menu):${NC}"
+    echo -e "    ${WHITE}hermes${NC}  /  ${WHITE}openclaude${NC}  /  ${WHITE}agy${NC}   (Gemini 3.5 Flash Lite)"
     echo ""
     echo -e "  ${GREEN}Install proot app → sync to XFCE menu:${NC}"
     echo -e "    ${WHITE}bash ~/proot-menu-sync.sh${NC}"
@@ -1095,6 +1262,7 @@ main() {
     step_apps
     step_python
     step_proot
+    step_ai_agents
     step_launchers
     step_theme_xfce
     step_shortcuts
